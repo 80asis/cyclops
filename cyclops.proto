@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+option go_package = "github.com/80asis/cyclops/cyclops";
+
+message CyclopsRequest {
+    string entity_uuid = 1;
+    string entity_type = 2;
+    string entity_name = 3;
+    string workflow = 4;
+}
+
+message CyclopsResponse {
+    bool status = 1;
+    string error = 2;
+}
+
+service Cyclops {
+    rpc SyncEntity(CyclopsRequest) returns (CyclopsResponse);
+}
+
