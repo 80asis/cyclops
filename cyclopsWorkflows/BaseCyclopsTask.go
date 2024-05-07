@@ -1,4 +1,4 @@
-package cyclopsWorklows
+package cyclopsWorkflows
 
 import (
 	"fmt"

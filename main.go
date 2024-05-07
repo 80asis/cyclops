@@ -4,7 +4,7 @@ import (
 	"log"
 	"net"
 
-	"cyclopsWorkflows"
+	"github.com/80asis/cyclops/cyclopsWorkflows"
 
 	"github.com/80asis/cyclops/cyclops"
 	"google.golang.org/grpc"
@@ -15,7 +15,7 @@ func main() {
 	if error != nil {
 		log.Fatalf("Failed to create a listner. Error: %s", error)
 	}
-	cyclopsWorkflows.BaseCyclopsTask.Run()
+	cyclopsWorkflows.Run()
 	serverRgistrar := grpc.NewServer()
 	service := &LocalCyclopsRpcSvcServer{}
 	cyclops.RegisterCyclopsRpcSvcServer(serverRgistrar, service)
