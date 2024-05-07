@@ -2,19 +2,245 @@ syntax = "proto3";
 
 option go_package = "github.com/80asis/cyclops/cyclops";
 
-message CyclopsRequest {
-    string entity_uuid = 1;
-    string entity_type = 2;
-    string entity_name = 3;
-    string workflow = 4;
+// Allowed Entity Types.
+// Add a new Entity type here if required.
+message EntitySyncEntityType {
+    enum Type {
+      kCategory = 0;
+      kProtectionRule = 1;
+      kRecoveryPlan = 2;
+      kFlowPolicy = 3;
+      kFlowSyncJob = 4;
+      kAddressGroup = 5;
+      kServiceGroup = 6;
+    }
+}
+// EntitySync Entity.
+message EntitySyncEntity {
+    // Unique identifier of the entity across sync sites. It could be either a
+    // name or a UUID.
+    optional string uid = 1;
+  
+    // Entity Type.
+    optional EntitySyncEntityType.Type entity_type = 2;
+}
+ //----------------------------------------------------------------------------
+
+
+message TaskRequestContext {
+    // UUID of task for idempotence.
+    optional bytes uuid = 1;
+  
+    // Parent task. This should NOT be set by a client. It is solely meant to
+    // be set internally by task implementations.
+    optional bytes parent_task_uuid = 2;
+  
+    // Only set when parent_task_uuid is set.
+    optional uint64 subtask_sequence_id = 3;
+  
+    // List of entities on which this task is being worked upon.
+    // repeated ergon.EntityId entity_list = 4;
+  
+    // Whether the task should be an internal task.
+    optional bool is_internal_task = 4;
+}
+//----------------------------------------------------------------------------
+
+
+
+message EntitySyncEntityInfo {
+    
+    // Unique identifier of the entity across sync sites. It could be either a
+    // name or a UUID.
+    optional string uid = 1;
+  
+    // Type of the entity.
+    optional EntitySyncEntityType.Type entity_type = 2;
+  
+    // Name of the entity as should be displayed on UI.
+    optional string display_name = 3;
+  
+    // Payload of the entity.
+    message Payload {
+      // This is expected to be the spec of the entity. EntitySync relies on this
+      // field to get the spec. If any other data needs to be synced then add a
+      // field as part of this message.
+      optional string spec = 1;
+  
+      // Applicable for RP only.
+    //   optional RecoveryPlanEntitiesStateMapping rp_entities_state_mapping = 2;
+  
+      // Needed to maintain different UUID for the same entity on different
+      // AZs.
+      optional string remote_entity_uid = 2;
+    }
+    optional Payload payload = 4;
+  
+    // Checksum of the entity. It is used to identify conflicts across syncs.
+    optional string checksum = 5;
+  
+    // Sequence id.
+    optional int32 seq_id = 6;
+  
+    // Sync operation type.
+    enum SyncOperationType {
+      kUpdate = 0;
+      kDelete = 1;
+      kSoftDelete = 2;
+    }
+    optional SyncOperationType op_type = 7;
+  
+    // URLs/cluster uuid of the Availabilty Zones to which the entity should be
+    // synced. Only required in case of selective syncing to particular AZs.
+    repeated string availability_zone_url_list = 8;
+  
+    // State of the entity i.e. kComplete, kError etc.
+    // Required for intentful entities. Dependent entities need to derive their
+    // status from the entities using them.
+    enum EntityState {
+      // Entity is in stable state. EntitySync will sync only those entities
+      // which are in this state.
+      kComplete = 0;
+      // Entity is in error state.
+      kError = 1;
+      // Entity is being modified.
+      kPending = 2;
+      // Entity is in unknown state.
+      kUnknown = 3;
+      // Entity Sync has to skip the entity. Plugins can set the state to this
+      // value even if the entity is in stable state(kComplete) to avoid getting
+      // the entity either synced or deleted based on their custom logic.
+      kSkip = 4;
+    }
+    optional EntityState state = 9;
+  
+    // Vector clock per entity used to detect conflicts. This is needed for
+    // Multisite EntitySync. The field is a repeated field since it needs to
+    // store the vector clock value for all the connected AZs.
+    // optional VectorClock vector_clock = 10;
+  
+    // dependent_entity_sync_entity_list is the list of entities that the entity
+    // depends on. This list should only have entities that otherwise won't be
+    // synced on their own, i.e. these entities shouldn't be part of the
+    // registered_plugins_list.
+    // (https://opengrok.eng.nutanix.com/source/xref/main/magneto/py/magneto/entity_sync/plugins/__init__.py).
+    // For example- Protection Rule payload may have the EntitySyncEntity with
+    // entity type kCategory in the dependent_entity_sync_entity_list.
+    // repeated EntitySyncEntity dependent_entity_sync_entity_list = 11;
 }
 
-message CyclopsResponse {
-    bool status = 1;
-    string error = 2;
-}
+//----------------------------------------------------------------------------
 
-service Cyclops {
-    rpc SyncEntity(CyclopsRequest) returns (CyclopsResponse);
-}
+message ExecuteEntitySyncArg {
+    // Task context for task based RPC.
+    optional TaskRequestContext task_request_context = 1;
+  
+    // List of entity information used to do validations and updates on the
+    // remote site.
+    repeated EntitySyncEntityInfo entity_info_list = 2;
+  
+    // Indicates whether to override entities(if feasible) in case of conflicts.
+    optional bool should_override = 3;
+  
+    // Cluster uuid of the PC pointed by the source Availability Zone.
+    optional string source_cluster_uuid = 4;
+  
+    // List of AZs connected to source AZ. This will help in determining if
+    // update need to be cascaded from local AZ to other AZs connected to local
+    // AZ or not.
+    // For example- A is connected to B and C, and B is also connected to C. If
+    // update happens at A, then the ExecuteEntitySyncArg for B and C will have
+    // source_connected_to_az_list set to A, B and C. This way we can determine
+    // at B that update need not be cascaded to C.
+    repeated string source_connected_to_az_list = 5;
+  
+    // EntitySync capability of the source PC.
+    // optional GetEntitySyncCapabilityRet entity_sync_capability = 6;
+  }
+  
+  message ExecuteEntitySyncRet {
+    // UUID of the task to poll for completion. On success, the task will contain
+    // a EntitySyncExecuteTaskRet.
+    optional bytes task_uuid = 1;
+  }
+  
+//----------------------------------------------------------------------------
 
+message TriggerEntitySyncArg {
+    // TODO: Populate this arg with any other parameters desired for Entity Sync.
+    // Task context for task based RPC.
+    optional TaskRequestContext task_request_context = 1;
+  
+    // Indicates whether to override entities(if feasible) in case of conflicts.
+    optional bool should_override = 2;
+  
+    // List of all the entities for which EntitySync is being triggered. If None,
+    // then EntitySync needs to be triggered for all entities.
+    repeated EntitySyncEntity entity_list = 3;
+}
+  
+message TriggerEntitySyncRet {
+    // UUID of the task created for handling request.
+    optional bytes task_uuid = 1;
+}  
+//----------------------------------------------------------------------------
+
+
+message TriggerEntitySyncAZArg {
+    // Task context for task based RPC.
+    optional TaskRequestContext task_request_context = 1;
+  
+    // Name of the connected Availability Zone.
+    optional string availability_zone_name = 2;
+  
+    // Cluster uuid of the PC pointed by the Availability Zone.
+    optional string remote_cluster_uuid = 3;
+  
+    // Entity information that needs to be synced.
+    repeated EntitySyncEntityInfo entity_info_list = 4;
+  
+    // Indicates whether to override entities(if feasible) in case of conflicts.
+    optional bool should_override = 5;
+  
+    // List of all the entities for which EntitySync is being triggered. If None,
+    // then EntitySync needs to be triggered for all entities. It differs from
+    // entity_info_list as entity_info_list may have category payload and in case
+    // of Delete, the corresponding payload may not be there. This field just
+    // indicates for which uids the EntitySync was triggered.
+    repeated EntitySyncEntity entity_list = 6;
+  }
+  
+  message TriggerEntitySyncAZRet {
+    // UUID of the task created for handling request.
+    optional bytes task_uuid = 1;
+  }
+  
+  message TriggerEntitySyncAZTaskRet {
+    // This SyncEntityResponseInfo is different from the one in
+    // entity_sync_types.proto even though the name is same.
+    message SyncEntityResponseInfo {
+      // Unique identifier of the entity across sync sites. It could be either a
+      // name or a UUID.
+      optional string uid = 1;
+  
+      // An error code indicating whether the sync was successful for the entity.
+      optional string error = 2;
+  
+      // Sequence id.
+      optional int32 seq_id = 3;
+  
+      // Vector clock.
+    //   optional VectorClock vector_clock = 4;
+    }
+    // This list does not need to be of same size as entity_info_list of
+    // TriggerEntitySyncAZArg since in the TriggerEntitySyncAZ some of the
+    // payload maybe removed(PluginNotFound or NotSupported) or added (Deletes).
+    repeated SyncEntityResponseInfo sync_entity_response_list = 1;
+  }
+  //----------------------------------------------------------------------------
+
+service CyclopsRpcSvc {
+    rpc ExecuteEntitySync(ExecuteEntitySyncArg) returns (ExecuteEntitySyncRet);
+    rpc TriggerEntitySync(TriggerEntitySyncArg) returns (TriggerEntitySyncRet);
+    rpc TriggerEntitySyncAZ(TriggerEntitySyncAZArg) returns (TriggerEntitySyncAZRet);
+}
