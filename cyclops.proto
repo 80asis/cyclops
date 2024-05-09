@@ -185,6 +185,33 @@ message TriggerEntitySyncRet {
 }  
 //----------------------------------------------------------------------------
 
+message EnableEntitySyncArg {
+  optional string entity_uuid = 1;
+
+  optional EntitySyncEntityType entity_type = 2;
+
+  optional string remote_az_uuid = 3;
+
+  optional bool force_sync = 4;
+}
+
+message EnableEntitySyncRet {
+  optional bytes task_uuid = 1;
+}
+
+message DisableEntitySyncArg {
+  optional string entity_uuid = 1;
+
+  optional EntitySyncEntityType entity_type = 2;
+
+  optional string remote_az_uuid = 3;
+}
+
+message DisableEntitySyncRet {
+  optional bytes task_uuid = 1;
+}
+
+//----------------------------------------------------------------------------
 
 message TriggerEntitySyncAZArg {
     // Task context for task based RPC.
@@ -243,4 +270,6 @@ service CyclopsRpcSvc {
     rpc ExecuteEntitySync(ExecuteEntitySyncArg) returns (ExecuteEntitySyncRet);
     rpc TriggerEntitySync(TriggerEntitySyncArg) returns (TriggerEntitySyncRet);
     rpc TriggerEntitySyncAZ(TriggerEntitySyncAZArg) returns (TriggerEntitySyncAZRet);
-}
+    rpc EnableEntitySync(EnableEntitySyncArg) returns (EnableEntitySyncRet);
+    rpc DisableEntitySync(DisableEntitySyncArg) returns (DisableEntitySyncRet);
+  }

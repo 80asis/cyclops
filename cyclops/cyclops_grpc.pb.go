@@ -25,6 +25,8 @@ type CyclopsRpcSvcClient interface {
 	ExecuteEntitySync(ctx context.Context, in *ExecuteEntitySyncArg, opts ...grpc.CallOption) (*ExecuteEntitySyncRet, error)
 	TriggerEntitySync(ctx context.Context, in *TriggerEntitySyncArg, opts ...grpc.CallOption) (*TriggerEntitySyncRet, error)
 	TriggerEntitySyncAZ(ctx context.Context, in *TriggerEntitySyncAZArg, opts ...grpc.CallOption) (*TriggerEntitySyncAZRet, error)
+	EnableEntitySync(ctx context.Context, in *EnableEntitySyncArg, opts ...grpc.CallOption) (*EnableEntitySyncRet, error)
+	DisableEntitySync(ctx context.Context, in *DisableEntitySyncArg, opts ...grpc.CallOption) (*DisableEntitySyncRet, error)
 }
 
 type cyclopsRpcSvcClient struct {
@@ -62,6 +64,24 @@ func (c *cyclopsRpcSvcClient) TriggerEntitySyncAZ(ctx context.Context, in *Trigg
 	return out, nil
 }
 
+func (c *cyclopsRpcSvcClient) EnableEntitySync(ctx context.Context, in *EnableEntitySyncArg, opts ...grpc.CallOption) (*EnableEntitySyncRet, error) {
+	out := new(EnableEntitySyncRet)
+	err := c.cc.Invoke(ctx, "/CyclopsRpcSvc/EnableEntitySync", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *cyclopsRpcSvcClient) DisableEntitySync(ctx context.Context, in *DisableEntitySyncArg, opts ...grpc.CallOption) (*DisableEntitySyncRet, error) {
+	out := new(DisableEntitySyncRet)
+	err := c.cc.Invoke(ctx, "/CyclopsRpcSvc/DisableEntitySync", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // CyclopsRpcSvcServer is the server API for CyclopsRpcSvc service.
 // All implementations must embed UnimplementedCyclopsRpcSvcServer
 // for forward compatibility
@@ -69,6 +89,8 @@ type CyclopsRpcSvcServer interface {
 	ExecuteEntitySync(context.Context, *ExecuteEntitySyncArg) (*ExecuteEntitySyncRet, error)
 	TriggerEntitySync(context.Context, *TriggerEntitySyncArg) (*TriggerEntitySyncRet, error)
 	TriggerEntitySyncAZ(context.Context, *TriggerEntitySyncAZArg) (*TriggerEntitySyncAZRet, error)
+	EnableEntitySync(context.Context, *EnableEntitySyncArg) (*EnableEntitySyncRet, error)
+	DisableEntitySync(context.Context, *DisableEntitySyncArg) (*DisableEntitySyncRet, error)
 	mustEmbedUnimplementedCyclopsRpcSvcServer()
 }
 
@@ -84,6 +106,12 @@ func (UnimplementedCyclopsRpcSvcServer) TriggerEntitySync(context.Context, *Trig
 }
 func (UnimplementedCyclopsRpcSvcServer) TriggerEntitySyncAZ(context.Context, *TriggerEntitySyncAZArg) (*TriggerEntitySyncAZRet, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method TriggerEntitySyncAZ not implemented")
+}
+func (UnimplementedCyclopsRpcSvcServer) EnableEntitySync(context.Context, *EnableEntitySyncArg) (*EnableEntitySyncRet, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method EnableEntitySync not implemented")
+}
+func (UnimplementedCyclopsRpcSvcServer) DisableEntitySync(context.Context, *DisableEntitySyncArg) (*DisableEntitySyncRet, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DisableEntitySync not implemented")
 }
 func (UnimplementedCyclopsRpcSvcServer) mustEmbedUnimplementedCyclopsRpcSvcServer() {}
 
@@ -152,6 +180,42 @@ func _CyclopsRpcSvc_TriggerEntitySyncAZ_Handler(srv interface{}, ctx context.Con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CyclopsRpcSvc_EnableEntitySync_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EnableEntitySyncArg)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CyclopsRpcSvcServer).EnableEntitySync(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/CyclopsRpcSvc/EnableEntitySync",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CyclopsRpcSvcServer).EnableEntitySync(ctx, req.(*EnableEntitySyncArg))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CyclopsRpcSvc_DisableEntitySync_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DisableEntitySyncArg)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CyclopsRpcSvcServer).DisableEntitySync(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/CyclopsRpcSvc/DisableEntitySync",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CyclopsRpcSvcServer).DisableEntitySync(ctx, req.(*DisableEntitySyncArg))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // CyclopsRpcSvc_ServiceDesc is the grpc.ServiceDesc for CyclopsRpcSvc service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -170,6 +234,14 @@ var CyclopsRpcSvc_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "TriggerEntitySyncAZ",
 			Handler:    _CyclopsRpcSvc_TriggerEntitySyncAZ_Handler,
+		},
+		{
+			MethodName: "EnableEntitySync",
+			Handler:    _CyclopsRpcSvc_EnableEntitySync_Handler,
+		},
+		{
+			MethodName: "DisableEntitySync",
+			Handler:    _CyclopsRpcSvc_DisableEntitySync_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
