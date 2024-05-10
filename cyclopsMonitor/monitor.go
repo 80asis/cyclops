@@ -65,7 +65,7 @@ func GetNewMonitor() *CyclopsMonitor { //-> interface{
 func panicRecover() {
 	// generic utility method to capture painc
 	if err := recover(); err != nil {
-		fmt.Println("Panic. Error: ", err)
+		fmt.Println("Panik Panik!! Error: ", err)
 	}
 }
 
