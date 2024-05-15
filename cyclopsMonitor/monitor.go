@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"sync"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 )
 
 /*
@@ -52,12 +54,12 @@ type CyclopsMonitor struct {
 
 func GetNewMonitor() *CyclopsMonitor { //-> interface{
 	// make sures the monitor is singleton and creates one if not created.
-	fmt.Println("Getting monitor")
+	log.Info("Getting monitor")
 	if Client != nil {
-		fmt.Println("Returning existing monitor")
+		log.Info("Returning existing monitor")
 		return Client
 	}
-	fmt.Println("No monitor found. Creating a new monitor")
+	log.Info("No monitor found. Creating a new monitor")
 	return &CyclopsMonitor{
 		clientIp: "0.0.0.0:9090",
 	}
@@ -73,10 +75,10 @@ func panicRecover() {
 func Start() {
 	// starts the monitor thread and register and unregister threads
 	defer panicRecover()
-	fmt.Println("Initiating threads")
+	log.Info("Initiating threads")
 	wg.Add(2)
 	client := GetNewMonitor()
-	fmt.Println(client)
+	log.Info(client)
 	go client.register()
 	go client.unRegister()
 	wg.Wait()
@@ -89,10 +91,10 @@ func (c *CyclopsMonitor) AddNotification(jsonData []byte) {
 	var data map[string]interface{}
 	err := json.Unmarshal(jsonData, &data)
 	if err != nil {
-		fmt.Println("Error desearlizing data")
+		log.Info("Error desearlizing data")
 		return
 	}
-	fmt.Println("Adding Entity to Manager for task creation. Data: ", data)
+	log.Info("Adding Entity to Manager for task creation. Data: ", data)
 }
 
 // Registering Entity
@@ -101,15 +103,16 @@ func (c *CyclopsMonitor) register() {
 	defer wg.Done()
 	defer panicRecover()
 	c.registerClient()
+	log.Info("Registering New Entities")
 	for true {
-		fmt.Println("Registering New Entities")
+
 		time.Sleep(5 * time.Second)
 	}
 }
 
 // Register Client
 func (c *CyclopsMonitor) registerClient() {
-	fmt.Println("Registering client to IDF")
+	log.Info("Registering client to IDF")
 }
 
 // Unregister Entity
@@ -118,8 +121,8 @@ func (c *CyclopsMonitor) unRegister() {
 
 	defer wg.Done()
 	defer panicRecover()
+	log.Info("Removing entity from IDF as its inactive")
 	for true {
-		fmt.Println("Removing entity from IDF as its inactive")
 		time.Sleep(3 * time.Second)
 	}
 }
@@ -127,26 +130,26 @@ func (c *CyclopsMonitor) unRegister() {
 // watch cycle
 func (c *CyclopsMonitor) startWatch() {
 	// this basically starts the watch on IDF of registered entities.
-	fmt.Println("Start Watch")
+	log.Info("Start Watch")
 }
 func (c *CyclopsMonitor) stopWatch() {
 	// This stops the watch on IDF of registered entity
-	fmt.Println("Stop Watch")
+	log.Info("Stop Watch")
 }
 
 // callbacks
 func (c *CyclopsMonitor) createEntityCb() {
 	// This callback should be triggred in case of creation on registered IDF entity
-	fmt.Println("Creation on IDF detected.")
+	log.Info("Creation on IDF detected.")
 }
 func (c *CyclopsMonitor) updateEntityCb() {
 	// This callback should be triggred in case of updation on registered IDF entity
-	fmt.Println("Update on IDF detected.")
+	log.Info("Update on IDF detected.")
 }
 
 func (c *CyclopsMonitor) deleteEntityCb() {
 	// This callback should be triggred in case of deletion on registered IDF entity
-	fmt.Println("Deletion on IDF detected.")
+	log.Info("Deletion on IDF detected.")
 }
 
 // Go magneto people are using to return interface instead of struct

@@ -1,11 +1,11 @@
 package cyclopsRPCServer
 
 import (
-	"log"
 	"net"
 
 	"github.com/80asis/cyclops/cyclops"
 	"github.com/80asis/cyclops/cyclopsMonitor"
+	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 )
 
