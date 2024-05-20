@@ -235,12 +235,12 @@ message TriggerEntitySyncAZArg {
     // of Delete, the corresponding payload may not be there. This field just
     // indicates for which uids the EntitySync was triggered.
     repeated EntitySyncEntity entity_list = 6;
-  }
+}
   
   message TriggerEntitySyncAZRet {
     // UUID of the task created for handling request.
     optional bytes task_uuid = 1;
-  }
+}
   
   message TriggerEntitySyncAZTaskRet {
     // This SyncEntityResponseInfo is different from the one in
@@ -263,8 +263,8 @@ message TriggerEntitySyncAZArg {
     // TriggerEntitySyncAZArg since in the TriggerEntitySyncAZ some of the
     // payload maybe removed(PluginNotFound or NotSupported) or added (Deletes).
     repeated SyncEntityResponseInfo sync_entity_response_list = 1;
-  }
-  //----------------------------------------------------------------------------
+}
+//----------------------------------------------------------------------------
 
 service CyclopsRpcSvc {
     rpc ExecuteEntitySync(ExecuteEntitySyncArg) returns (ExecuteEntitySyncRet);
@@ -272,4 +272,21 @@ service CyclopsRpcSvc {
     rpc TriggerEntitySyncAZ(TriggerEntitySyncAZArg) returns (TriggerEntitySyncAZRet);
     rpc EnableEntitySync(EnableEntitySyncArg) returns (EnableEntitySyncRet);
     rpc DisableEntitySync(DisableEntitySyncArg) returns (DisableEntitySyncRet);
-  }
+}
+
+//----------------------------------------------------------------------------
+
+// message EntityType {
+//   // Required. Name of the entity type. Example: node, cluster
+//   // The names of the entity types should be unique and in
+//   // lower case as a convention, although it will be used in a
+//   // case-insensitive manner internally.
+//   optional string entity_type_name = 1;
+
+//   // Required. Entity Type Info.
+//   optional TypeInfo type_info = 4;
+
+//   // Optional. Entity metric types. Will contain metric types only if
+//   // registered.
+//   repeated MetricType metric_type_list = 3;
+// }

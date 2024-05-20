@@ -15,11 +15,13 @@ func Start() {
 	if error != nil {
 		log.Fatalf("Failed to create a listner. Error: %s", error)
 	}
-	localMonitor := cyclopsMonitor.GetNewMonitor()
+	monitor := cyclopsMonitor.GetNewMonitor()
+	cyclopsMonitor := monitor.(*cyclopsMonitor.CyclopsMonitor)
+
 	// starting go rpc server thread
 	serverRgistrar := grpc.NewServer()
 	service := &LocalCyclopsRpcSvcServer{
-		Monitor: localMonitor,
+		Monitor: cyclopsMonitor,
 	}
 	cyclops.RegisterCyclopsRpcSvcServer(serverRgistrar, service)
 	error = serverRgistrar.Serve(listener)
