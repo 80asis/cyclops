@@ -3,39 +3,42 @@ package manager
 import (
 	"fmt"
 	"time"
-	"github.com/80asis/cyclops/tables"
+
 	"github.com/80asis/cyclops/entity"
+	"github.com/80asis/cyclops/tables"
 )
 
-type GenericSyncSubManager struct {
-	Timestamp   time.Time
-	Entities    []entity.Entity
-	workflow    WorkflowType
-	forceSync   bool
-	esm         *EntitySyncManager // Inheritance
+type PolicyEnablementSubManager struct {
+	Timestamp       time.Time
+	Entities        []entity.Entity
+	targetAZ        []string
+	workflow        WorkflowType
+	forceSync       bool
+	esm             *EntitySyncManager // Inheritance
 	UtilsManagerInf ManagerUtilsInf
 	LocalTable      tables.LocalTableInterface
 	RemoteTable     tables.RemoteTableInterface
 }
 
-func NewGenericSyncSubManager(esm *EntitySyncManager, forceSync bool) *GenericSyncSubManager {
-	return &GenericSyncSubManager{
-		esm:        esm,
-		Timestamp:  esm.Timestamp,
-		Entities:   esm.Entities,
-		workflow:   esm.workflow,
-		forceSync:  forceSync,
+func NewPolicyEnablementSubManager(esm *EntitySyncManager, forceSync bool) *PolicyEnablementSubManager {
+	return &PolicyEnablementSubManager{
+		esm:             esm,
+		Timestamp:       esm.Timestamp,
+		Entities:        esm.Entities,
+		workflow:        esm.workflow,
+		targetAZ:        esm.targetAZ,
+		forceSync:       forceSync,
 		UtilsManagerInf: &Utils{},
 	}
 }
 
-func (manager *GenericSyncSubManager) InitializeTables() {
+func (manager *PolicyEnablementSubManager) InitializeTables() {
 	manager.LocalTable = &tables.LocalTable{}
 	manager.RemoteTable = &tables.RemoteTable{}
 	fmt.Println("Local and remote tables initialized")
 }
 
-func (manager *GenericSyncSubManager) FilterEntities() map[string][]entity.Entity {
+func (manager *PolicyEnablementSubManager) FilterEntities() map[string][]entity.Entity {
 	connectedAZs := manager.LocalTable.FetchConnectedAZs()
 	checksums := make(map[string]string)
 	for _, entity := range manager.Entities {
@@ -70,7 +73,7 @@ func (manager *GenericSyncSubManager) FilterEntities() map[string][]entity.Entit
 	return entitiesToSyncByAZ
 }
 
-func (manager *GenericSyncSubManager) CreateErgonTasksForEntitySync(entitiesToSyncByAZ map[string][]entity.Entity) map[string]map[string]string {
+func (manager *PolicyEnablementSubManager) CreateErgonTasksForEntitySync(entitiesToSyncByAZ map[string][]entity.Entity) map[string]map[string]string {
 	azToEntityTaskMap := make(map[string]map[string]string)
 	for az, entities := range entitiesToSyncByAZ {
 		entityToTaskMap := make(map[string]string)
@@ -85,7 +88,7 @@ func (manager *GenericSyncSubManager) CreateErgonTasksForEntitySync(entitiesToSy
 	return azToEntityTaskMap
 }
 
-func (manager *GenericSyncSubManager) Start() (map[string]map[string]string, error) {
+func (manager *PolicyEnablementSubManager) Start() (map[string]map[string]string, error) {
 	manager.InitializeTables()
 	entitiesToSyncByAZ := manager.FilterEntities()
 	azToEntityTaskMap := manager.CreateErgonTasksForEntitySync(entitiesToSyncByAZ)

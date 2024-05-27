@@ -10,6 +10,7 @@ import (
 type CascadingSubManager struct {
 	Timestamp       time.Time
 	Entities        []entity.Entity
+	targetAZ        []string
 	workflow        WorkflowType
 	forceSync       bool
 	esm             *EntitySyncManager // Inheritance
@@ -24,6 +25,7 @@ func NewCascadingSubManager(esm *EntitySyncManager) *CascadingSubManager {
 		Timestamp:       esm.Timestamp,
 		Entities:        esm.Entities,
 		workflow:        esm.workflow,
+		targetAZ:        esm.targetAZ,
 		UtilsManagerInf: &Utils{},
 	}
 }
@@ -36,6 +38,9 @@ func (manager *CascadingSubManager) InitializeTables() {
 
 func (manager *CascadingSubManager) FilterEntities() map[string][]entity.Entity {
 	connectedAZs := manager.LocalTable.FetchConnectedAZs()
+	if len(manager.targetAZ) > 0{
+		connectedAZs = manager.targetAZ
+	}
 	checksums := make(map[string]string)
 	for _, entity := range manager.Entities {
 		checksum := manager.UtilsManagerInf.CalculateChecksum(entity)

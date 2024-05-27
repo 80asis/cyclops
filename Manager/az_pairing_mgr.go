@@ -10,6 +10,7 @@ import (
 type AZPairingSubManager struct {
 	Timestamp        time.Time
 	Entities         []entity.Entity
+	targetAZ         []string
 	workflow         WorkflowType
 	esm              *EntitySyncManager // Inheritance
 	UtilsManagerInf  ManagerUtilsInf
@@ -23,6 +24,7 @@ func NewAZPairingSubManager(esm *EntitySyncManager) *AZPairingSubManager {
 		Timestamp:       esm.Timestamp,
 		Entities:        esm.Entities,
 		workflow:        esm.workflow,
+		targetAZ:        esm.targetAZ,
 		UtilsManagerInf: &Utils{},
 	}
 }
@@ -36,6 +38,9 @@ func (manager *AZPairingSubManager) InitializeTables() {
 func (manager *AZPairingSubManager) FilterEntities() map[string][]entity.Entity {
 	// Checksum check not required
 	connectedAZs := manager.LocalTable.FetchConnectedAZs()
+	if len(manager.targetAZ) > 0{
+		connectedAZs = manager.targetAZ
+	}
 	entitiesToSync := manager.LocalTable.FetchAllEntities()
 
 	entitiesToSyncByAZ := make(map[string][]entity.Entity)

@@ -38,6 +38,7 @@ func main() {
 			{EntityID: "entity3", EntityKind: "category", OpType: "update"},
 		},
 		manager.Cascading,
+		[]string{"AZ4"},
 	)
 
 	// Start a goroutine to execute the Process function

@@ -26,13 +26,15 @@ type EntitySyncManager struct {
 	Timestamp time.Time
 	Entities  []entity.Entity
 	workflow  WorkflowType
+	targetAZ  []string
 }
 
-func NewEntitySyncManager(timestamp time.Time, entities []entity.Entity, workflow WorkflowType) *EntitySyncManager {
+func NewEntitySyncManager(timestamp time.Time, entities []entity.Entity, workflow WorkflowType, targetAZ []string) *EntitySyncManager {
 	return &EntitySyncManager{
 		Timestamp: timestamp,
 		Entities:  entities,
 		workflow:  workflow,
+		targetAZ: targetAZ,
 	}
 }
 
