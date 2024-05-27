@@ -16,6 +16,15 @@ type Monitor interface {
 	DeleteCb(entity_proto, old_entity_proto []byte)
 	availabilityZoneAddCb(entity_proto []byte)
 	availabilityZoneDeleteCb(entity_proto []byte)
+	register()       // Registering Entity
+	registerClient() // Registering Client
+	unRegister()     // Unregisters the entity
+	startWatch()     // start a watch on IDF
+	stopWatch()      // stop a watch on IDF
+	createEntityCb() // callbacks for Entity Creation
+	updateEntityCb() // callbacks for Entity Updation
+	deleteEntityCb() // callbacks for Entity Deletion
+
 }
 
 var Client *CyclopsMonitor
@@ -24,6 +33,29 @@ var wg sync.WaitGroup
 
 type CyclopsMonitor struct {
 	InsightsAdapter InsightAdapter
+	// specific client level details for IDF
+	// maintains connection
+	clientIp string
+}
+
+func GetNewMonitor() *CyclopsMonitor { //-> interface{
+	// make sures the monitor is singleton and creates one if not created.
+	fmt.Println("Getting monitor")
+	if Client != nil {
+		fmt.Println("Returning existing monitor")
+		return Client
+	}
+	// TODO: use a package to create singleton monitor
+	fmt.Println("No monitor found. Creating a new monitor")
+	return &CyclopsMonitor{
+		clientIp: "0.0.0.0:9090",
+	}
+}
+func panicRecover() {
+	// generic utility method to capture painc
+	if err := recover(); err != nil {
+		fmt.Println("Panik Panik!! Error: ", err)
+	}
 }
 
 // Starting the Monitor Thread
@@ -48,6 +80,13 @@ func init() {
 
 	// we call this AddNotification in case of any restart. AddNotification if no data is given triggeres sync for all the OOS (out-of-sync) entities.
 	client.AddNotification([]byte{})
+	fmt.Println(client)
+
+	//TODO: Check how to properly register IDF watches
+	// Registering IDF watch
+	go client.register()
+	// UnRegistering IDF watch
+	go client.unRegister()
 	wg.Wait()
 }
 
@@ -97,6 +136,10 @@ func (c *CyclopsMonitor) CreateUpdateCb(entity_proto, old_entity_proto []byte) {
 	//					Entity Type of proto is mentioned here https://sourcegraph.ntnxdpro.com/ntnxdb-master/-/blob/ntnxdb_client/insights/insights_interface/insights_interface.proto
 	//  old_entity_proto: This is the old value of the proto that will be shared by IDF
 	//					Entity Type of proto is mentioned here https://sourcegraph.ntnxdpro.com/ntnxdb-master/-/blob/ntnxdb_client/insights/insights_interface/insights_interface.proto
+// Register Client
+func (c *CyclopsMonitor) registerClient() {
+	// Registering your client to IDF service
+	fmt.Println("Registering client to IDF")
 }
 
 func (c *CyclopsMonitor) DeleteCb(entity_proto, old_entity_proto []byte) {
