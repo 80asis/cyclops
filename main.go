@@ -1,10 +1,10 @@
 package main
 
 import (
-	"github.com/80asis/cyclops/cyclopsAPIServer"
-	_ "github.com/80asis/cyclops/cyclopsMonitor"
-	"github.com/80asis/cyclops/cyclopsRPCServer"
-	log "github.com/sirupsen/logrus"
+	// "github.com/80asis/cyclops/cyclopsAPIServer"
+	// _ "github.com/80asis/cyclops/cyclopsMonitor"
+	// "github.com/80asis/cyclops/cyclopsRPCServer"
+	// log "github.com/sirupsen/logrus"
 	"fmt"
 	"sync"
 	"time"
@@ -14,15 +14,15 @@ import (
 
 func main() {
 
-	// starting go RPC thread
-	go cyclopsRPCServer.Start()
+	// // starting go RPC thread
+	// go cyclopsRPCServer.Start()
 
-	// starting API Server
-	cyclopsService := cyclopsAPIServer.NewService()
-	handler := cyclopsAPIServer.NewHandler(cyclopsService)
-	if err := handler.Serve(); err != nil {
-		log.Error("Failed to serve the application")
-	}
+	// // starting API Server
+	// cyclopsService := cyclopsAPIServer.NewService()
+	// handler := cyclopsAPIServer.NewHandler(cyclopsService)
+	// if err := handler.Serve(); err != nil {
+	// 	log.Error("Failed to serve the application")
+	// }
 	// Use WaitGroup to wait for all goroutines to finish
 	var wg sync.WaitGroup
 
@@ -37,7 +37,7 @@ func main() {
 			{EntityID: "entity2", EntityKind: "recovery_plan", OpType: "delete"},
 			{EntityID: "entity3", EntityKind: "category", OpType: "update"},
 		},
-		manager.GenericUpdates,
+		manager.Cascading,
 	)
 
 	// Start a goroutine to execute the Process function

@@ -44,10 +44,10 @@ func (manager *EntitySyncManager) Process() (map[string]map[string]string, error
 		subManager = NewGenericSyncSubManager(manager, false)
 	case AZPairing:
 		subManager = NewAZPairingSubManager(manager)
-	// case PolicyEnablement:
-	// 	subManager = NewPolicyEnablementSubManager(manager)
-	// case Cascading:
-	// 	subManager = NewCascadingSubManager(manager)
+	case PolicyEnablement:
+		subManager = NewPolicyEnablementSubManager(manager, false)
+	case Cascading:
+		subManager = NewCascadingSubManager(manager)
 	default:
 		return nil, errors.New("unknown workflow type")
 	}
