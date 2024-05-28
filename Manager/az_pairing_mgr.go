@@ -8,40 +8,28 @@ import (
 )
 
 type AZPairingSubManager struct {
-	Timestamp        time.Time
-	Entities         []entity.Entity
-	targetAZ         []string
-	workflow         WorkflowType
-	esm              *EntitySyncManager // Inheritance
-	UtilsManagerInf  ManagerUtilsInf
-	LocalTable       tables.LocalTableInterface
-	RemoteTable      tables.RemoteTableInterface
+	esm *EntitySyncManager
 }
 
 func NewAZPairingSubManager(esm *EntitySyncManager) *AZPairingSubManager {
 	return &AZPairingSubManager{
-		esm:             esm,
-		Timestamp:       esm.Timestamp,
-		Entities:        esm.Entities,
-		workflow:        esm.workflow,
-		targetAZ:        esm.targetAZ,
-		UtilsManagerInf: &Utils{},
+		esm: esm,
 	}
 }
 
 func (manager *AZPairingSubManager) InitializeTables() {
-	manager.LocalTable = &tables.LocalTable{}
-	manager.RemoteTable = &tables.RemoteTable{}
+	manager.esm.LocalTable = &tables.LocalTable{}
+	manager.esm.RemoteTable = &tables.RemoteTable{}
 	fmt.Println("Local and remote tables initialized")
 }
 
 func (manager *AZPairingSubManager) FilterEntities() map[string][]entity.Entity {
 	// Checksum check not required
-	connectedAZs := manager.LocalTable.FetchConnectedAZs()
-	if len(manager.targetAZ) > 0{
-		connectedAZs = manager.targetAZ
+	connectedAZs := manager.esm.LocalTable.FetchConnectedAZs()
+	if len(manager.esm.targetAZ) > 0 {
+		connectedAZs = manager.esm.targetAZ
 	}
-	entitiesToSync := manager.LocalTable.FetchAllEntities()
+	entitiesToSync := manager.esm.LocalTable.FetchAllEntities()
 
 	entitiesToSyncByAZ := make(map[string][]entity.Entity)
 	for _, az := range connectedAZs {
@@ -54,12 +42,12 @@ func (manager *AZPairingSubManager) CreateErgonTasksForEntitySync(entitiesToSync
 	azToEntityTaskMap := make(map[string]map[string]string)
 	for az, entities := range entitiesToSyncByAZ {
 
-		parentTask := manager.UtilsManagerInf.CreateParentEntitySyncTask(entities, az, manager.workflow)
+		parentTask := manager.esm.UtilsManagerInf.CreateParentEntitySyncTask(entities, az, manager.esm.workflow)
 		fmt.Printf("Created %s", parentTask)
 
 		entityToTaskMap := make(map[string]string)
 		for _, entity := range entities {
-			task := manager.UtilsManagerInf.CreateTriggerEntitySyncAZTask(entity, az, manager.workflow)
+			task := manager.esm.UtilsManagerInf.CreateTriggerEntitySyncAZTask(entity, az, manager.esm.workflow)
 			time.Sleep(1 * time.Second)
 			fmt.Printf("ErgonTask: %s created for entity: %+v, AZ: %s\n", task, entity, az)
 			entityToTaskMap[entity.EntityID] = task

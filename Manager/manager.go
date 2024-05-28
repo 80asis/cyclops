@@ -4,6 +4,7 @@ import (
 	"errors"
 	"time"
     "github.com/80asis/cyclops/entity"
+	"github.com/80asis/cyclops/tables"
 )
 
 type WorkflowType string
@@ -16,26 +17,35 @@ const (
 )
 
 type EntitySyncManagerInterface interface {
+
 	FilterEntities() map[string][]entity.Entity
 	CreateErgonTasksForEntitySync(entitiesToSyncByAZ map[string][]entity.Entity) map[string]map[string]string
 	Start() (map[string]map[string]string, error)
 }
 
-// Base Struct
 type EntitySyncManager struct {
-	Timestamp time.Time
-	Entities  []entity.Entity
-	workflow  WorkflowType
-	targetAZ  []string
+    Timestamp       time.Time
+    Entities        []entity.Entity
+    targetAZ        []string
+    workflow        WorkflowType
+    forceSync       bool
+    UtilsManagerInf ManagerUtilsInf
+    LocalTable      tables.LocalTableInterface
+    RemoteTable     tables.RemoteTableInterface
 }
 
-func NewEntitySyncManager(timestamp time.Time, entities []entity.Entity, workflow WorkflowType, targetAZ []string) *EntitySyncManager {
-	return &EntitySyncManager{
-		Timestamp: timestamp,
-		Entities:  entities,
-		workflow:  workflow,
-		targetAZ: targetAZ,
-	}
+// NewEntitySyncManager constructor function with default values
+func NewEntitySyncManager(entities []entity.Entity, targetAZ []string, workflow WorkflowType, forceSync bool) *EntitySyncManager {
+    return &EntitySyncManager{
+        Timestamp:       time.Now(),
+        Entities:        entities,
+        targetAZ:        targetAZ,
+        workflow:        workflow,
+        forceSync:       forceSync,
+        UtilsManagerInf: &Utils{},
+        LocalTable:      &tables.LocalTable{},
+        RemoteTable:     &tables.RemoteTable{},
+    }
 }
 
 func (manager *EntitySyncManager) Process() (map[string]map[string]string, error) {
@@ -43,11 +53,11 @@ func (manager *EntitySyncManager) Process() (map[string]map[string]string, error
 
 	switch manager.workflow {
 	case GenericUpdates:
-		subManager = NewGenericSyncSubManager(manager, false)
+		subManager = NewGenericSyncSubManager(manager)
 	case AZPairing:
 		subManager = NewAZPairingSubManager(manager)
 	case PolicyEnablement:
-		subManager = NewPolicyEnablementSubManager(manager, false)
+		subManager = NewPolicyEnablementSubManager(manager)
 	case Cascading:
 		subManager = NewCascadingSubManager(manager)
 	default:

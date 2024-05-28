@@ -9,59 +9,45 @@ import (
 )
 
 type PolicyEnablementSubManager struct {
-	Timestamp       time.Time
-	Entities        []entity.Entity
-	targetAZ        []string
-	workflow        WorkflowType
-	forceSync       bool
-	esm             *EntitySyncManager // Inheritance
-	UtilsManagerInf ManagerUtilsInf
-	LocalTable      tables.LocalTableInterface
-	RemoteTable     tables.RemoteTableInterface
+	esm *EntitySyncManager
 }
 
-func NewPolicyEnablementSubManager(esm *EntitySyncManager, forceSync bool) *PolicyEnablementSubManager {
+func NewPolicyEnablementSubManager(esm *EntitySyncManager) *PolicyEnablementSubManager {
 	return &PolicyEnablementSubManager{
-		esm:             esm,
-		Timestamp:       esm.Timestamp,
-		Entities:        esm.Entities,
-		workflow:        esm.workflow,
-		targetAZ:        esm.targetAZ,
-		forceSync:       forceSync,
-		UtilsManagerInf: &Utils{},
+		esm: esm,
 	}
 }
 
 func (manager *PolicyEnablementSubManager) InitializeTables() {
-	manager.LocalTable = &tables.LocalTable{}
-	manager.RemoteTable = &tables.RemoteTable{}
+	manager.esm.LocalTable = &tables.LocalTable{}
+	manager.esm.RemoteTable = &tables.RemoteTable{}
 	fmt.Println("Local and remote tables initialized")
 }
 
 func (manager *PolicyEnablementSubManager) FilterEntities() map[string][]entity.Entity {
-	connectedAZs := manager.LocalTable.FetchConnectedAZs()
+	connectedAZs := manager.esm.LocalTable.FetchConnectedAZs()
 	checksums := make(map[string]string)
-	for _, entity := range manager.Entities {
-		checksum := manager.UtilsManagerInf.CalculateChecksum(entity)
+	for _, entity := range manager.esm.Entities {
+		checksum := manager.esm.UtilsManagerInf.CalculateChecksum(entity)
 		checksums[entity.EntityID] = checksum
 	}
 	entitiesToSync := make(map[string]string)
-	for _, entity := range manager.Entities {
-		if manager.LocalTable.VerifyChecksum(entity.EntityID, checksums[entity.EntityID]) {
+	for _, entity := range manager.esm.Entities {
+		if manager.esm.LocalTable.VerifyChecksum(entity.EntityID, checksums[entity.EntityID]) {
 			continue
 		}
-		manager.LocalTable.UpdateChecksum(entity.EntityID, checksums[entity.EntityID])
-		manager.LocalTable.MarkOutOfSync(entity.EntityID)
+		manager.esm.LocalTable.UpdateChecksum(entity.EntityID, checksums[entity.EntityID])
+		manager.esm.LocalTable.MarkOutOfSync(entity.EntityID)
 		entitiesToSync[entity.EntityID] = checksums[entity.EntityID]
 	}
 	entitiesToSyncByAZ := make(map[string][]entity.Entity)
 	for _, az := range connectedAZs {
 		entitiesToSyncInAZ := make([]entity.Entity, 0)
 		for entityID, checksum := range entitiesToSync {
-			if manager.RemoteTable.VerifyChecksumInAZ(entityID, checksum, az) {
+			if manager.esm.RemoteTable.VerifyChecksumInAZ(entityID, checksum, az) {
 				continue
 			}
-			for _, entity := range manager.Entities {
+			for _, entity := range manager.esm.Entities {
 				if entity.EntityID == entityID {
 					entitiesToSyncInAZ = append(entitiesToSyncInAZ, entity)
 					break
@@ -78,7 +64,7 @@ func (manager *PolicyEnablementSubManager) CreateErgonTasksForEntitySync(entitie
 	for az, entities := range entitiesToSyncByAZ {
 		entityToTaskMap := make(map[string]string)
 		for _, entity := range entities {
-			task := manager.UtilsManagerInf.CreateTriggerEntitySyncAZTask(entity, az, manager.workflow)
+			task := manager.esm.UtilsManagerInf.CreateTriggerEntitySyncAZTask(entity, az, manager.esm.workflow)
 			time.Sleep(1 * time.Second)
 			fmt.Printf("\nErgonTask: %s created for entity: %+v, AZ: %s\n", task, entity, az)
 			entityToTaskMap[entity.EntityID] = task

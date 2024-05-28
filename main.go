@@ -7,45 +7,30 @@ import (
 	// log "github.com/sirupsen/logrus"
 	"fmt"
 	"sync"
-	"time"
+	// "time"
 	"github.com/80asis/cyclops/manager"
 	"github.com/80asis/cyclops/entity"
 )
 
 func main() {
-
-	// // starting go RPC thread
-	// go cyclopsRPCServer.Start()
-
-	// // starting API Server
-	// cyclopsService := cyclopsAPIServer.NewService()
-	// handler := cyclopsAPIServer.NewHandler(cyclopsService)
-	// if err := handler.Serve(); err != nil {
-	// 	log.Error("Failed to serve the application")
-	// }
-	// Use WaitGroup to wait for all goroutines to finish
 	var wg sync.WaitGroup
-
-	// Increment the WaitGroup counter
 	wg.Add(1)
 
-	// Create an instance of EntitySyncManager
-	entitySyncManager := manager.NewEntitySyncManager(
-		time.Now(),
-		[]entity.Entity{
-			{EntityID: "entity1", EntityKind: "protection_rule", OpType: "update"},
-			{EntityID: "entity2", EntityKind: "recovery_plan", OpType: "delete"},
-			{EntityID: "entity3", EntityKind: "category", OpType: "update"},
-		},
-		manager.Cascading,
-		[]string{"AZ4"},
-	)
+	Entities := []entity.Entity{
+        {EntityID: "entity1", EntityKind: "protection_rule", OpType: "update"},
+        {EntityID: "entity2", EntityKind: "recovery_plan", OpType: "delete"},
+		{EntityID: "entity3", EntityKind: "category", OpType: "update"},
+    }
+	targetAZ := []string{}
+    Workflow := manager.PolicyEnablement
+    ForceSync := false
 
-	// Start a goroutine to execute the Process function
+    // Create an instance of EntitySyncManager with custom values
+    entitySyncManager := manager.NewEntitySyncManager(Entities, targetAZ, Workflow, ForceSync)
+
 	go func() {
 		defer wg.Done()
 
-		// Call the Process function
 		result, err := entitySyncManager.Process()
 		if err != nil {
 			fmt.Printf("Error processing payload: %v\n", err)
