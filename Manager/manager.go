@@ -2,8 +2,10 @@ package manager
 
 import (
 	"errors"
+	"fmt"
 	"time"
-    "github.com/80asis/cyclops/entity"
+
+	"github.com/80asis/cyclops/entity"
 	"github.com/80asis/cyclops/tables"
 )
 
@@ -36,20 +38,25 @@ type EntitySyncManager struct {
 
 // NewEntitySyncManager constructor function with default values
 func NewEntitySyncManager(entities []entity.Entity, targetAZ []string, workflow WorkflowType, forceSync bool) *EntitySyncManager {
-    return &EntitySyncManager{
+	return &EntitySyncManager{
         Timestamp:       time.Now(),
         Entities:        entities,
         targetAZ:        targetAZ,
         workflow:        workflow,
         forceSync:       forceSync,
         UtilsManagerInf: &Utils{},
-        LocalTable:      &tables.LocalTable{},
-        RemoteTable:     &tables.RemoteTable{},
     }
+}
+
+func (manager *EntitySyncManager) InitializeTables() {
+	manager.LocalTable = &tables.LocalTable{}
+	manager.RemoteTable = &tables.RemoteTable{}
+	fmt.Println("Local and remote tables initialized")
 }
 
 func (manager *EntitySyncManager) Process() (map[string]map[string]string, error) {
 	var subManager EntitySyncManagerInterface
+	manager.InitializeTables()
 
 	switch manager.workflow {
 	case GenericUpdates:

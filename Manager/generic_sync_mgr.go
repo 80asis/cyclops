@@ -3,7 +3,6 @@ package manager
 import (
 	"fmt"
 	"time"
-	"github.com/80asis/cyclops/tables"
 	"github.com/80asis/cyclops/entity"
 )
 
@@ -15,12 +14,6 @@ func NewGenericSyncSubManager(esm *EntitySyncManager) *GenericSyncSubManager {
 	return &GenericSyncSubManager{
 		esm:        esm,
 	}
-}
-
-func (manager *GenericSyncSubManager) InitializeTables() {
-	manager.esm.LocalTable = &tables.LocalTable{}
-	manager.esm.RemoteTable = &tables.RemoteTable{}
-	fmt.Println("Local and remote tables initialized")
 }
 
 func (manager *GenericSyncSubManager) FilterEntities() map[string][]entity.Entity {
@@ -77,7 +70,6 @@ func (manager *GenericSyncSubManager) CreateErgonTasksForEntitySync(entitiesToSy
 }
 
 func (manager *GenericSyncSubManager) Start() (map[string]map[string]string, error) {
-	manager.InitializeTables()
 	entitiesToSyncByAZ := manager.FilterEntities()
 	azToEntityTaskMap := manager.CreateErgonTasksForEntitySync(entitiesToSyncByAZ)
 	return azToEntityTaskMap, nil

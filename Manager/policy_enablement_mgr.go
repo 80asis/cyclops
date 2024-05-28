@@ -3,9 +3,7 @@ package manager
 import (
 	"fmt"
 	"time"
-
 	"github.com/80asis/cyclops/entity"
-	"github.com/80asis/cyclops/tables"
 )
 
 type PolicyEnablementSubManager struct {
@@ -16,12 +14,6 @@ func NewPolicyEnablementSubManager(esm *EntitySyncManager) *PolicyEnablementSubM
 	return &PolicyEnablementSubManager{
 		esm: esm,
 	}
-}
-
-func (manager *PolicyEnablementSubManager) InitializeTables() {
-	manager.esm.LocalTable = &tables.LocalTable{}
-	manager.esm.RemoteTable = &tables.RemoteTable{}
-	fmt.Println("Local and remote tables initialized")
 }
 
 func (manager *PolicyEnablementSubManager) FilterEntities() map[string][]entity.Entity {
@@ -75,7 +67,6 @@ func (manager *PolicyEnablementSubManager) CreateErgonTasksForEntitySync(entitie
 }
 
 func (manager *PolicyEnablementSubManager) Start() (map[string]map[string]string, error) {
-	manager.InitializeTables()
 	entitiesToSyncByAZ := manager.FilterEntities()
 	azToEntityTaskMap := manager.CreateErgonTasksForEntitySync(entitiesToSyncByAZ)
 	return azToEntityTaskMap, nil

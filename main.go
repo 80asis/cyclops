@@ -22,7 +22,7 @@ func main() {
 		{EntityID: "entity3", EntityKind: "category", OpType: "update"},
     }
 	targetAZ := []string{}
-    Workflow := manager.PolicyEnablement
+    Workflow := manager.GenericUpdates
     ForceSync := false
 
     // Create an instance of EntitySyncManager with custom values

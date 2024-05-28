@@ -3,7 +3,6 @@ package manager
 import (
 	"fmt"
 	"time"
-	"github.com/80asis/cyclops/tables"
 	"github.com/80asis/cyclops/entity"
 )
 
@@ -15,12 +14,6 @@ func NewCascadingSubManager(esm *EntitySyncManager) *CascadingSubManager {
 	return &CascadingSubManager{
 		esm: esm,
 	}
-}
-
-func (manager *CascadingSubManager) InitializeTables() {
-	manager.esm.LocalTable = &tables.LocalTable{}
-	manager.esm.RemoteTable = &tables.RemoteTable{}
-	fmt.Println("Local and remote tables initialized")
 }
 
 func (manager *CascadingSubManager) FilterEntities() map[string][]entity.Entity {
@@ -77,7 +70,6 @@ func (manager *CascadingSubManager) CreateErgonTasksForEntitySync(entitiesToSync
 }
 
 func (manager *CascadingSubManager) Start() (map[string]map[string]string, error) {
-	manager.InitializeTables()
 	entitiesToSyncByAZ := manager.FilterEntities()
 	azToEntityTaskMap := manager.CreateErgonTasksForEntitySync(entitiesToSyncByAZ)
 	return azToEntityTaskMap, nil
