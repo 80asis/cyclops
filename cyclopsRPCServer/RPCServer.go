@@ -15,7 +15,7 @@ func Start() {
 	if error != nil {
 		log.Fatalf("Failed to create a listner. Error: %s", error)
 	}
-	monitor := cyclopsMonitor.GetNewMonitor()
+	monitor := cyclopsMonitor.GetMonitor()
 	cyclopsMonitor := monitor.(*cyclopsMonitor.CyclopsMonitor)
 
 	// starting go rpc server thread

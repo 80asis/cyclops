@@ -1,49 +1,25 @@
 package main
 
 import (
-	// "github.com/80asis/cyclops/cyclopsAPIServer"
-	// _ "github.com/80asis/cyclops/cyclopsMonitor"
-	// "github.com/80asis/cyclops/cyclopsRPCServer"
-	// log "github.com/sirupsen/logrus"
-	"fmt"
 	"sync"
-	// "time"
-	"github.com/80asis/cyclops/manager"
-	"github.com/80asis/cyclops/entity"
+
+	"github.com/80asis/cyclops/cyclopsAPIServer"
+	_ "github.com/80asis/cyclops/cyclopsMonitor"
+	"github.com/80asis/cyclops/cyclopsRPCServer"
+	log "github.com/sirupsen/logrus"
 )
 
 func main() {
 	var wg sync.WaitGroup
 	wg.Add(1)
 
-	Entities := []entity.Entity{
-        {EntityID: "entity1", EntityKind: "protection_rule", OpType: "update"},
-        {EntityID: "entity2", EntityKind: "recovery_plan", OpType: "delete"},
-		{EntityID: "entity3", EntityKind: "category", OpType: "update"},
-    }
-	targetAZ := []string{}
-    Workflow := manager.GenericUpdates
-    ForceSync := false
+	go cyclopsRPCServer.Start()
 
-    // Create an instance of EntitySyncManager with custom values
-    entitySyncManager := manager.NewEntitySyncManager(Entities, targetAZ, Workflow, ForceSync)
+	// starting API Server
+	cyclopsService := cyclopsAPIServer.NewService()
+	handler := cyclopsAPIServer.NewHandler(cyclopsService)
+	if err := handler.Serve(); err != nil {
+		log.Error("Failed to serve the application")
+	}
 
-	go func() {
-		defer wg.Done()
-
-		result, err := entitySyncManager.Process()
-		if err != nil {
-			fmt.Printf("Error processing payload: %v\n", err)
-			return
-		}
-
-		// Handle the result
-		fmt.Println(result)
-	}()
-
-	// Wait for all goroutines to finish
-	wg.Wait()
-
-	// Print completion message
-	fmt.Println("Entity synchronization process completed successfully")
 }

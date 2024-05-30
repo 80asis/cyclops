@@ -1,7 +1,6 @@
 package cyclopsMonitor
 
 import (
-	"fmt"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -65,16 +64,14 @@ type InsightClientAdapter struct {
 }
 
 // Starting the InsightClientAdapter Thread
-func init() {
+func InsightClientAdapaterInit() {
 	// starts the InsightClientAdapter thread and register and unregister threads
 	defer panicRecover()
 	log.Info("Initiating Insight Client Adapter threads")
-	wg.Add(2)
 	client := GetClientAdapter()
 	log.Info(client)
 	go client.Register()
 	go client.Unregister()
-	wg.Wait()
 }
 
 // Gets the InsightClientAdapter
@@ -103,6 +100,8 @@ func (c *InsightClientAdapter) Register() {
 	defer panicRecover()
 	c.RegisterClient()
 	log.Info("Registering New Entities")
+	log.Info("Registering client to IDF")
+
 	for true {
 		if c.State == READY {
 			// keep on waiting for callbacks
@@ -128,7 +127,6 @@ func (c *InsightClientAdapter) Unregister() {
 
 func (c *InsightClientAdapter) RegisterClient() {
 	// Connects to IDF Client
-	log.Info("Registering client to IDF")
 	// c.DBclient = &insights_interface.InsightsService("client_id", c.ErrorCb)
 }
 
@@ -181,14 +179,6 @@ func (c *InsightClientAdapter) DeleteEntityCb() {
 func (c *InsightClientAdapter) Reset() {
 	log.Error("Error reported by IDF")
 	c.State = RESET
-}
-
-// Utils function
-func panicRecover() {
-	// generic utility method to capture painc
-	if err := recover(); err != nil {
-		fmt.Println("Panik Panik!! Error: ", err)
-	}
 }
 
 /* Notes:

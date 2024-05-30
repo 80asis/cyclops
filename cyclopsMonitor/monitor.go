@@ -6,25 +6,18 @@ import (
 
 	"github.com/80asis/cyclops/cyclops"
 	config "github.com/80asis/cyclops/cyclopsConfig"
+	manager "github.com/80asis/cyclops/manager"
 	log "github.com/sirupsen/logrus"
 )
 
 type Monitor interface {
+	Init()
 	AddNotification(jsonData []byte) // calls the manager and adds the changes to manager queue.
 	AddNotificationForForceSync(entity_uuid []byte)
 	CreateUpdateCb(entity_proto, old_entity_proto []byte)
 	DeleteCb(entity_proto, old_entity_proto []byte)
 	availabilityZoneAddCb(entity_proto []byte)
 	availabilityZoneDeleteCb(entity_proto []byte)
-	register()       // Registering Entity
-	registerClient() // Registering Client
-	unRegister()     // Unregisters the entity
-	startWatch()     // start a watch on IDF
-	stopWatch()      // stop a watch on IDF
-	createEntityCb() // callbacks for Entity Creation
-	updateEntityCb() // callbacks for Entity Updation
-	deleteEntityCb() // callbacks for Entity Deletion
-
 }
 
 var Client *CyclopsMonitor
@@ -33,33 +26,31 @@ var wg sync.WaitGroup
 
 type CyclopsMonitor struct {
 	InsightsAdapter InsightAdapter
-	// specific client level details for IDF
-	// maintains connection
-	clientIp string
 }
 
-func GetNewMonitor() *CyclopsMonitor { //-> interface{
-	// make sures the monitor is singleton and creates one if not created.
-	fmt.Println("Getting monitor")
-	if Client != nil {
-		fmt.Println("Returning existing monitor")
-		return Client
-	}
-	// TODO: use a package to create singleton monitor
-	fmt.Println("No monitor found. Creating a new monitor")
-	return &CyclopsMonitor{
-		clientIp: "0.0.0.0:9090",
-	}
+var (
+	getMonitor       = GetNewMonitor
+	monitorOnce      sync.Once
+	monitorInterface Monitor
+)
+
+func GetNewMonitor() Monitor { //-> interface{
+	// This is a method to get monitor type
+	// we are keep monitor type as singleton type
+	log.Info("Getting a new monitor")
+	return &CyclopsMonitor{}
 }
-func panicRecover() {
-	// generic utility method to capture painc
-	if err := recover(); err != nil {
-		fmt.Println("Panik Panik!! Error: ", err)
-	}
+
+func GetMonitor() Monitor {
+	monitorOnce.Do(func() {
+		monitorInterface = GetNewMonitor()
+		monitorInterface.Init()
+	})
+	return monitorInterface
 }
 
 // Starting the Monitor Thread
-func init() {
+func (manager *CyclopsMonitor) Init() {
 	// starts the monitor thread and register all the plugins to idf
 	// Here we will addiing watch for az tables for delete update or add entity
 	// We will also add all the entities/plugins to be watches by idf
@@ -70,8 +61,11 @@ func init() {
 	client := GetNewMonitor()
 	// Cast the Monitor interface to *CyclopsMonitor
 	cyclopsClient := client.(*CyclopsMonitor)
+	wg.Add(2)
+	InsightClientAdapaterInit()
 	cyclopsClient.InsightsAdapter = GetClientAdapter()
-	log.Info(client)
+	log.Info("Client: %v", client)
+	// this should update all the registered entities from config
 	for entity_type := range config.RegisterPlugins {
 		// fetches all the plugin and registeres them to IDF
 		// Example: client.InsightsAdapter.startNewWatch(plugin, client.addKindCreateCb)
@@ -80,26 +74,8 @@ func init() {
 
 	// we call this AddNotification in case of any restart. AddNotification if no data is given triggeres sync for all the OOS (out-of-sync) entities.
 	client.AddNotification([]byte{})
-	fmt.Println(client)
-
-	//TODO: Check how to properly register IDF watches
-	// Registering IDF watch
-	go client.register()
-	// UnRegistering IDF watch
-	go client.unRegister()
+	log.Info(client)
 	wg.Wait()
-}
-
-func GetNewMonitor() Monitor { //-> interface{
-	// This is a method to get monitor type
-	// we are keep monitor type as singleton type
-	log.Info("Getting monitor")
-	if Client != nil {
-		log.Info("Returning existing monitor")
-		return Client
-	}
-	log.Info("No monitor found. Creating a new monitor")
-	return &CyclopsMonitor{}
 }
 
 func (c *CyclopsMonitor) AddNotification(jsonData []byte) {
@@ -112,10 +88,12 @@ func (c *CyclopsMonitor) AddNotification(jsonData []byte) {
 	var data map[string]interface{}
 	err := json.Unmarshal(jsonData, &data)
 	if err != nil {
-		log.Info("Error desearlizing data")
-		return
+		log.Error("Error desearlizing data")
 	}
-	log.Info("Adding Entity to Manager for task creation. Data: ", data)
+	// adding entity to Manager for task creation
+	manager := manager.NewEntitySyncManager()
+	manager.AddEntity()
+	log.Infof("Adding Entity to Manager for task creation. Data: %v", data)
 }
 
 func (c *CyclopsMonitor) AddNotificationForForceSync(entity_uuid []byte) {
@@ -136,10 +114,6 @@ func (c *CyclopsMonitor) CreateUpdateCb(entity_proto, old_entity_proto []byte) {
 	//					Entity Type of proto is mentioned here https://sourcegraph.ntnxdpro.com/ntnxdb-master/-/blob/ntnxdb_client/insights/insights_interface/insights_interface.proto
 	//  old_entity_proto: This is the old value of the proto that will be shared by IDF
 	//					Entity Type of proto is mentioned here https://sourcegraph.ntnxdpro.com/ntnxdb-master/-/blob/ntnxdb_client/insights/insights_interface/insights_interface.proto
-// Register Client
-func (c *CyclopsMonitor) registerClient() {
-	// Registering your client to IDF service
-	fmt.Println("Registering client to IDF")
 }
 
 func (c *CyclopsMonitor) DeleteCb(entity_proto, old_entity_proto []byte) {
@@ -164,4 +138,11 @@ func (c *CyclopsMonitor) availabilityZoneDeleteCb(entity_proto []byte) {
 	// Args:
 	//	entity_proto: This is the new updated proto that will be shared by IDF
 	//					Entity Type of proto is mentioned here https://sourcegraph.ntnxdpro.com/ntnxdb-master/-/blob/ntnxdb_client/insights/insights_interface/insights_interface.proto
+}
+
+func panicRecover() {
+	// generic utility method to capture painc
+	if err := recover(); err != nil {
+		log.Infof("Panik Panik!! Error: %v", err)
+	}
 }
