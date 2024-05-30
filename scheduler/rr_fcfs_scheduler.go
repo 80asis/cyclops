@@ -1,4 +1,4 @@
-package CyclopsScheduler
+package scheduler
 
 import (
 	"sync"

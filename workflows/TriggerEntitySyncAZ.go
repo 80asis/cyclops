@@ -1,1 +1,1 @@
-package cyclopsWorkflows
+package workflows
